@@ -2,6 +2,7 @@
 
 # IDE0320: Make anonymous function static
 csharp_prefer_static_anonymous_function = true
+<<<<<<< HEAD
 csharp_using_directive_placement = outside_namespace:silent
 csharp_prefer_simple_using_statement = true:suggestion
 csharp_prefer_braces = true:silent
@@ -76,3 +77,5 @@ tab_width = 4
 indent_size = 4
 end_of_line = crlf
 dotnet_style_collection_initializer = true:suggestion
+=======
+>>>>>>> 9354e9dd3a9a2a24d601710409caf0f9ccdcd5a4

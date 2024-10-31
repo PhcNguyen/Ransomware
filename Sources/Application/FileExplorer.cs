@@ -19,18 +19,25 @@ class FileExplorer
         this.excludedDirectories = new HashSet<string>(EnvironmentInspector.DirectoriesToSkip());
 
         // Khởi tạo danh sách định dạng file cần lưu
+<<<<<<< HEAD
         this.allowedFileExtensions = Config.LoadExtensions();
+=======
+        this.allowedFileExtensions = ConfigLoader.FileExtensions();
+>>>>>>> 9354e9dd3a9a2a24d601710409caf0f9ccdcd5a4
 
         this.isRunning = false;  
         this.SpecificFiles = new ConcurrentBag<FileDetail>();  
     }
 
+<<<<<<< HEAD
     private bool StartsWithAny(this string str, HashSet<string> prefixes)
     {
         // Kiểm tra xem chuỗi có bắt đầu bằng bất kỳ tiền tố nào không
         return prefixes.Any(prefix => str.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
     }
 
+=======
+>>>>>>> 9354e9dd3a9a2a24d601710409caf0f9ccdcd5a4
     private bool IsWritable(string path)
     {
         try
