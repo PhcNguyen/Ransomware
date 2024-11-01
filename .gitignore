@@ -3,8 +3,10 @@
 
 # Visual Studio
 .vs/
+.vscode/
 *.suo
 *.user
+*.userprefs
 *.userosscache
 *.sln.docstates
 
@@ -17,28 +19,13 @@ x86/
 [Bb]in/
 [Oo]bj/
 
-# Visual Studio Code
-.vscode/
-<<<<<<< HEAD
-*.sln
-*.csproj
-*.user
-*.userprefs
-*.suo
-=======
->>>>>>> 9354e9dd3a9a2a24d601710409caf0f9ccdcd5a4
-
 # Rider
 .idea/
 *.sln.iml
 
-<<<<<<< HEAD
 # Temporary files and directories
 *.tmp
 *.temp
-=======
-# Logs
->>>>>>> 9354e9dd3a9a2a24d601710409caf0f9ccdcd5a4
 *.log
 
 # User-specific files

