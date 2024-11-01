@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<DirectoriesToSkip>
+	<Windows>
+		<Directory>C:\OEM</Directory>
+		<Directory>C:\Windows</Directory>
+		<Directory>C:\PerfLogs</Directory>
+		<Directory>C:\Recovery</Directory>
+		<Directory>C:\$WinREAgent</Directory>
+		<Directory>C:\$SysReset</Directory>
+		<Directory>C:\Users\Public</Directory>
+		<Directory>C:\OneDriveTemp</Directory>
+		<Directory>C:\Config.Msi</Directory>
+		<Directory>C:\Users\Default</Directory>
+		<Directory>C:\$Recycle.Bin</Directory>
+		<Directory>C:\Program Files</Directory>
+		<Directory>C:\ProgramData</Directory>
+		<Directory>C:\Program Files (x86)</Directory>
+		<Directory>C:\Documents and Settings</Directory>
+		<Directory>C:\System Volume Information</Directory>
+		<Directory>C:\Users\{UserName}\Recent</Directory>
+		<Directory>C:\Users\{UserName}\AppData\Local\History</Directory>
+		<Directory>C:\Users\{UserName}\AppData\Local\Temp\msd</Directory>
+		<Directory>C:\Users\{UserName}\AppData\Local\Temporary Internet Files</Directory>
+		<Directory>C:\Users\{UserName}\AppData\Local\Microsoft\Windows\INetCache\Content.IE5</Directory>
+		<Directory>C:\Users\{UserName}\AppData\Local\Microsoft\Windows\Temporary Internet Files</Directory>
+	</Windows>
+	<Linux>
+		<Directory>/usr</Directory>
+		<Directory>/opt</Directory>
+		<Directory>/sys</Directory>
+		<Directory>/var</Directory>
+		<Directory>/dev</Directory>
+		<Directory>/etc</Directory>
+		<Directory>/run</Directory>
+		<Directory>/lib</Directory>
+		<Directory>/tmp</Directory>
+		<Directory>/proc</Directory>
+	</Linux>
+	<MacOS>
+		<Directory>/Applications</Directory>
+		<Directory>/System</Directory>
+		<Directory>/bin</Directory>
+		<Directory>/sbin</Directory>
+		<Directory>/usr</Directory>
+		<Directory>/var</Directory>
+		<Directory>/etc</Directory>
+		<Directory>/private</Directory>
+		<Directory>/cores</Directory>
+		<Directory>/var/db</Directory>
+		<Directory>/var/root</Directory>
+		<Directory>~/Library/Application Support</Directory>
+		<Directory>~/Library/Preferences</Directory>
+		<Directory>~/Library/Caches</Directory>
+		<Directory>~/Library/Logs</Directory>
+		<Directory>~/Library/Saved Application State</Directory>
+		<Directory>~/Library/Containers</Directory>
+		<Directory>~/Library/LaunchAgents</Directory>
+	</MacOS>
+	<NonAdminWin>
+		<Directory>C:\Users\All Users</Directory>
+		<Directory>C:\Users\{UserName}\PrintHood</Directory>
+		<Directory>C:\Users\{UserName}\Cookies</Directory>
+		<Directory>C:\Users\{UserName}\Application Data</Directory>
+		<Directory>C:\Users\{UserName}\Templates</Directory>
+		<Directory>C:\Users\{UserName}\Start Menu</Directory>
+		<Directory>C:\Users\{UserName}\SendTo</Directory>
+		<Directory>C:\Users\{UserName}\My Documents</Directory>
+		<Directory>C:\Users\{UserName}\NetHood</Directory>
+		<Directory>C:\Users\{UserName}\Local Settings</Directory>
+		<Directory>C:\Users\{UserName}\AppData\Local\Application Data</Directory>
+		<Directory>C:\Users\{UserName}\AppData\Local\ElevatedDiagnostics</Directory>
+	</NonAdminWin>
+	<NonAdminLinux>
+	</NonAdminLinux>
+	<NonAdminMacOS>
+		<Directory>~/Library/Cookies</Directory>
+		<Directory>~/Library/Keychains</Directory>
+		<Directory>~/Library/Mail</Directory>
+		<Directory>~/Library/Messages</Directory>
+		<Directory>~/Library/WebKit</Directory>
+	</NonAdminMacOS>
+</DirectoriesToSkip>

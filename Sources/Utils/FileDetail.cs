@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿// Copyright (C) PhcNguyen Developers
+// Distributed under the terms of the Modified BSD License.
 
 namespace Ransomware.Sources.Utils;
 public class FileDetail

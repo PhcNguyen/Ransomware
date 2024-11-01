@@ -1,4 +1,7 @@
-﻿using System.Net.Sockets;
+﻿// Copyright (C) PhcNguyen Developers
+// Distributed under the terms of the Modified BSD License.
+
+using System.Net.Sockets;
 using System.Text;
 using Ransomware.Sources.Utils;
 
@@ -13,7 +16,7 @@ class NetworkClient
 
     public NetworkClient()
     {
-        (this.host, this.port) = Config.LoadNetwork();
+        (this.host, this.port) = Config.Network();
         this.client = new TcpClient();
         this.stream = null;
     }

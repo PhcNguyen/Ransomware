@@ -1,7 +1,6 @@
 ﻿// Copyright (C) PhcNguyen Developers
 // Distributed under the terms of the Modified BSD License.
 
-
 using Ransomware.Sources.Application;
 class Program
 {
@@ -26,7 +25,7 @@ class Program
             else
             {
                 Console.WriteLine("Kết nối thất bại. Đang thử lại...");
-                Thread.Sleep(2000); // Đợi 2 giây trước khi thử lại
+                Thread.Sleep(1000); // Đợi 2 giây trước khi thử lại
             }
         }
 
