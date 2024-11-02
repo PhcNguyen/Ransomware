@@ -71,6 +71,7 @@
 		<Directory>C:\Users\{UserName}\AppData\Local\ElevatedDiagnostics</Directory>
 	</NonAdminWin>
 	<NonAdminLinux>
+		<Directory>root</Directory>
 	</NonAdminLinux>
 	<NonAdminMacOS>
 		<Directory>~/Library/Cookies</Directory>
